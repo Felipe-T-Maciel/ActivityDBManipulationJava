@@ -1,3 +1,20 @@
+//create database GalaxyDB;
+//        use GalaxyDB
+//
+//        create table galaxia(
+//        id int not null primary key,
+//        tipo varchar(55) not null,
+//        materiaEscura boolean not null
+//        );
+//
+//        create table estrela(
+//        id int not null primary key,
+//        temperatura float not null,
+//        tamanho float not null,
+//        id_galaxia int,
+//        foreign key (id_galaxia) references galaxia(id)
+//        );
+
 import java.sql.*;
 import java.util.Scanner;
 
