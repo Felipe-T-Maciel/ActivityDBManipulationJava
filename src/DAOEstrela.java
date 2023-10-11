@@ -1,6 +1,8 @@
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.Set;
 
 public class DAOEstrela extends DAOAll<Estrela, Integer>{
 
@@ -15,5 +17,15 @@ public class DAOEstrela extends DAOAll<Estrela, Integer>{
         } catch (SQLException throwables) {
             throwables.printStackTrace();
         }
+    }
+
+    @Override
+    String getTabela() {
+        return "estrela";
+    }
+
+    @Override
+    protected Estrela converte(ResultSet rs) throws SQLException {
+        return new Estrela(rs);
     }
 }

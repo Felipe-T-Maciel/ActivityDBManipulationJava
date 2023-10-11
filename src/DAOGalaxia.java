@@ -1,6 +1,8 @@
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.Set;
 
 public class DAOGalaxia extends DAOAll<Galaxia,Integer>{
 
@@ -14,5 +16,15 @@ public class DAOGalaxia extends DAOAll<Galaxia,Integer>{
         } catch (SQLException throwables) {
             throwables.printStackTrace();
         }
+    }
+
+    @Override
+    String getTabela() {
+        return "galaxia";
+    }
+
+    @Override
+    protected Galaxia converte(ResultSet rs) throws SQLException {
+        return new Galaxia(rs);
     }
 }
