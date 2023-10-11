@@ -23,12 +23,7 @@ public class Main {
     static Scanner sc = new Scanner(System.in);
 
     public static void main(String[] args) {
-
-        String urlBanco = "jdbc:mysql://localhost:3306/galaxydb";
-        String user = "root";
-        String senha = "root";
-
-        try (Connection connection = DriverManager.getConnection(urlBanco,user,senha)) {
+        try (Connection connection = Banco.getConnection()) {
             DAOGalaxia daoGalaxia = new DAOGalaxia();
             do {
                 System.out.print("""
@@ -65,31 +60,40 @@ public class Main {
                     [1] Cadastrar uma nova Estrela
                     [2] Listar as Estrelas atualmente conhecidas
                     [3] Deletar uma Estrela
-                    [4] Voltar
+                    [4] Editar uma Estrela
+                    [5] Voltar
                     >\t""");
             int escolha = sc.nextInt();
             switch (escolha){
                 case 1->{
-                    daoEstrela.create(connection,cadastrarEstrela(connection,daoGalaxia));
+                    daoEstrela.create(connection,cadastrarEstrela(connection,daoGalaxia, daoEstrela,0));
                 }
                 case 2->{
                     for (Estrela estrela:
-                            daoEstrela.realAll(connection)) {
-                        System.out.println(estrela.toString());
+                            daoEstrela.realAll(connection, daoGalaxia)) {
+                        System.out.print(estrela.toString());
+                        if(estrela.getGalaxia()!=null){
+                            System.out.println(" | "+estrela.getGalaxia().toString());
+                        }
                     }
                 }
                 case 3 -> {
-                    daoEstrela.delete(connection, retornaIDEscolhidoEstrela(daoEstrela, connection));
+                    daoEstrela.delete(connection, retornaIDEscolhidoEstrela(daoEstrela, connection, daoGalaxia));
                 }
-                case 4->{
+                case 4 -> {
+                    daoEstrela.editar(connection, cadastrarEstrela(connection,daoGalaxia,daoEstrela, retornaIDEscolhidoEstrela(daoEstrela,connection,daoGalaxia)));
+                }
+                case 5->{
                     return;
                 }
             }
         }while (true);
     }
 
-    private static Estrela cadastrarEstrela(Connection connection, DAOGalaxia daoGalaxia) {
-        Galaxia galaxia = null;
+    private static Estrela cadastrarEstrela(Connection connection, DAOGalaxia daoGalaxia, DAOEstrela daoEstrela, int id) {
+        System.out.print("Qual o nome da Estrela: ");
+        String nome = sc.next();
+
         System.out.print("Qual a temperatura da Estrela: ");
         double temperatura = sc.nextDouble();
 
@@ -108,23 +112,17 @@ public class Main {
             opcao = sc.nextInt();
             switch (opcao){
                 case 1->{
-                    try (PreparedStatement statement = connection.prepareStatement("Select max(id) from galaxia")){
-                        ResultSet rs = statement.executeQuery();
-                        if(rs.next()){
-                            return new Estrela(rs.getInt("id"),temperatura,tamanho,galaxia);
-                        }
-                    } catch (SQLException throwables) {
-                        throwables.printStackTrace();
+                    if(id==0){
+                        return new Estrela(daoEstrela.ultimoID(),nome, temperatura,tamanho,encontraGalaxia(connection,daoGalaxia));
+                    }else {
+                        return new Estrela(id,nome, temperatura,tamanho,encontraGalaxia(connection,daoGalaxia));
                     }
                 }
                 case 2->{
-                    try (PreparedStatement statement = connection.prepareStatement("Select max(id) from galaxia")){
-                        ResultSet rs = statement.executeQuery();
-                        if(rs.next()){
-                            return new Estrela(rs.getInt("id"),temperatura,tamanho);
-                        }
-                    } catch (SQLException throwables) {
-                        throwables.printStackTrace();
+                    if(id==0){
+                        return new Estrela(daoEstrela.ultimoID(),nome, temperatura,tamanho);
+                    }else {
+                        return new Estrela(id,nome, temperatura,tamanho);
                     }
                 }
                 case 3->{
@@ -135,12 +133,13 @@ public class Main {
         throw new RuntimeException();
     }
 
-    private static Galaxia buscarGalaxia(DAOGalaxia daoGalaxia, Connection connection) {
+    private static Galaxia encontraGalaxia(Connection connection, DAOGalaxia daoGalaxia) {
         do{
             int id = retornaIDEscolhidoGalaxia(daoGalaxia, connection);
-            for (Galaxia galaxi: daoGalaxia.realAll(connection)) {
-                if(id == galaxi.getId()){
-                    return galaxi;
+            for (Galaxia galax:
+                    daoGalaxia.realAll(connection, daoGalaxia)) {
+                if(galax.getId() == id){
+                    return galax;
                 }
             }
         }while (true);
@@ -153,23 +152,27 @@ public class Main {
                     [1] Cadastrar uma nova Galaxia
                     [2] Listar as Galaxias atualmente conhecidas
                     [3] Deletar uma Galaxia
-                    [4] Voltar
+                    [4] Editar uma Galaxia
+                    [5] Voltar
                     >\t""");
             int escolha = sc.nextInt();
             switch (escolha){
                 case 1->{
-                    daoGalaxia.create(connection,cadastrarGalaxia(connection));
+                    daoGalaxia.create(connection,cadastrarGalaxia(daoGalaxia, 0));
                 }
                 case 2->{
                     for (Galaxia galaxia:
-                         daoGalaxia.realAll(connection)) {
+                         daoGalaxia.realAll(connection, daoGalaxia)) {
                         System.out.println(galaxia.toString());
                     }
                 }
                 case 3 -> {
                     daoGalaxia.delete(connection, retornaIDEscolhidoGalaxia(daoGalaxia, connection));
                 }
-                case 4->{
+                case 4 -> {
+                    daoGalaxia.editar(connection, cadastrarGalaxia(daoGalaxia, retornaIDEscolhidoGalaxia(daoGalaxia, connection)));
+                }
+                case 5->{
                     return;
                 }
             }
@@ -181,7 +184,7 @@ public class Main {
             System.out.print("O id que deseja: ");
             int id = sc.nextInt();
             for (Galaxia galaxia:
-                    daoGalaxia.realAll(connection)) {
+                    daoGalaxia.realAll(connection, daoGalaxia)) {
                 if(galaxia.getId() == id){
                     return id;
                 }
@@ -189,12 +192,12 @@ public class Main {
         }while (true);
     }
 
-    static int retornaIDEscolhidoEstrela(DAOEstrela daoEstrela, Connection connection){
+    static int retornaIDEscolhidoEstrela(DAOEstrela daoEstrela, Connection connection, DAOGalaxia daoGalaxia){
         do{
             System.out.print("O id que deseja: ");
             int id = sc.nextInt();
             for (Estrela estrela:
-                    daoEstrela.realAll(connection)) {
+                    daoEstrela.realAll(connection, daoGalaxia)) {
                 if(estrela.getId() == id){
                     return id;
                 }
@@ -202,9 +205,11 @@ public class Main {
         }while (true);
     }
 
-    private static Galaxia cadastrarGalaxia(Connection connection) {
+    private static Galaxia cadastrarGalaxia(DAOGalaxia daoGalaxia,int id) {
         int opcao = 0;
         String tipo = "";
+        System.out.println("O nome da Galaxia: ");
+        String nome = sc.next();
         do{
             System.out.print("""
                 Qual o tipo da galaxia?
@@ -244,14 +249,10 @@ public class Main {
                     System.out.println("Escolha uma opção valida!");
                 }
         }while (opcao<1 || opcao>2);
-        try (PreparedStatement statement = connection.prepareStatement("Select max(id) from galaxia")){
-            ResultSet rs = statement.executeQuery();
-            if(rs.next()){
-                return new Galaxia(rs.getInt("id")+1,tipo,possuiMateriaEscura);
-            }
-        } catch (SQLException throwables) {
-            throwables.printStackTrace();
+        if(id==0){
+            return new Galaxia(daoGalaxia.ultimoID(),nome, tipo,possuiMateriaEscura);
+        }else {
+            return new Galaxia(id,nome, tipo,possuiMateriaEscura);
         }
-        throw new RuntimeException();
     }
 }

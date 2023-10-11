@@ -24,7 +24,20 @@ public class DAOGalaxia extends DAOAll<Galaxia,Integer>{
     }
 
     @Override
-    protected Galaxia converte(ResultSet rs) throws SQLException {
+    protected Galaxia converte(ResultSet rs, DAOGalaxia daoGalaxia) throws SQLException {
         return new Galaxia(rs);
+    }
+
+    @Override
+    public void editar(Connection connection, Galaxia ob) {
+        try (PreparedStatement statement = connection.prepareStatement("update galaxia set nome = ?, tipo = ?, materiaEscura = ?,;")){
+            statement.setInt(4, ob.getId());
+            statement.setBoolean(3,ob.isPossuiMateriaEscura());
+            statement.setString(3, ob.getTipo());
+            statement.setString(1, ob.getNome());
+            statement.execute();
+        } catch (SQLException throwables) {
+            throwables.printStackTrace();
+        }
     }
 }
